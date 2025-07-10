@@ -102,15 +102,19 @@ def create_app():
                     s3 = boto3.client('s3', region_name='us-east-1')
                     try: 
                         presigned_post = s3.generate_presigned_post(
-                            ClientMethod='put_object',
-                            Params={
-                                'Bucket': S3_BUCKET,
-                                'Key': filename,
-                                'ContentType': file.content_type,
-                                'ACL': 'public-read'
+                            Bucket=S3_BUCKET,
+                            Key=filename,
+                            Fields={
+                                "Content-Type": file.content_type,
+                                "ACL": "public-read"
                             },
+                            Conditions=[
+                                {"Content-Type": file.content_type},
+                                {"ACL": "public-read"}
+                            ],
                             ExpiresIn=3600
                         )
+
                         image_url = f"https://{S3_BUCKET}.s3.amazonaws.com/{filename}"
                     except NoCredentialsError:
                         app.logger.error("AWS credentials not available for S3 upload")
