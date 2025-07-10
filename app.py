@@ -105,7 +105,7 @@ def create_app():
                         Params={
                             'Bucket': S3_BUCKET,
                             'Key': filename,
-                            'ContentType': file.content_type
+                            'ContentType': file.content_type,
                             'ACL': 'public-read'
                         },
                         ExpiresIn=3600
