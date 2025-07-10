@@ -110,10 +110,11 @@ def create_app():
                         },
                         ExpiresIn=3600
                     )
+                    image_url = f"https://{S3_BUCKET}.s3.amazonaws.com/{filename}"
                 else:
                     flash("Invalid file type")
                     return render_template("create_post.html")
-            image_url = f"https://{S3_BUCKET}.s3.amazonaws.com/{filename}"
+            
             # Save the post (with image_url if set)
             post = Post(title=title, body=body, image_url=image_url)
             db.session.add(post)
