@@ -29,7 +29,7 @@ def create_app():
 
     os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
-    s3 = boto3.client("s3")
+    s3 = boto3.client('s3', region_name='us-east-1')
     S3_BUCKET = app.config["S3_BUCKET"]
 
 
@@ -118,8 +118,9 @@ def create_app():
                         return render_template("create_post.html")
                     except ClientError as e:
                         # catch any S3 client errors
-                        app.logger.error(f"S3 upload error: {e}")
-                        flash("There was an error uploading the image.")
+                        error_message = str(e)
+                        app.logger.error(f"S3 upload error: {error_message}")
+                        flash(f"S3 upload failed: {error_message}")
                         return render_template("create_post.html")
                 else:
                     flash("Invalid file type")
