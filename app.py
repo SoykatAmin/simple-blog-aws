@@ -1,6 +1,8 @@
 import os
 import boto3
 from botocore.exceptions import NoCredentialsError
+from botocore.exceptions import ClientError
+
 from flask import (
     Flask, render_template, request,
     redirect, url_for, flash
@@ -97,31 +99,21 @@ def create_app():
             if file and file.filename:
                 if allowed_file(file.filename):
                     filename = secure_filename(file.filename)
-                    try:
-                        # Upload directly to S3 with public-read ACL
-                        s3.upload_fileobj(
-                            file,
-                            S3_BUCKET,
-                            filename,
-                            ExtraArgs={
-                                "ACL": "public-read",
-                                "ContentType": file.content_type
-                            }
-                        )
-                        image_url = f"https://{S3_BUCKET}.s3.amazonaws.com/{filename}"
-                    except NoCredentialsError:
-                        app.logger.error("AWS credentials not available for S3 upload")
-                        flash("AWS credentials not available.")
-                        return render_template("create_post.html")
-                    except ClientError as e:
-                        # catch any S3 client errors
-                        app.logger.error(f"S3 upload error: {e}")
-                        flash("There was an error uploading the image.")
-                        return render_template("create_post.html")
+                    s3 = boto3.client('s3', region_name='us-east-1')
+                    presigned_post = s3.generate_presigned_post(
+                        ClientMethod='put_object',
+                        Params={
+                            'Bucket': S3_BUCKET,
+                            'Key': filename,
+                            'ContentType': file.content_type
+                            'ACL': 'public-read'
+                        },
+                        ExpiresIn=3600
+                    )
                 else:
                     flash("Invalid file type")
                     return render_template("create_post.html")
-
+            image_url = f"https://{S3_BUCKET}.s3.amazonaws.com/{filename}"
             # Save the post (with image_url if set)
             post = Post(title=title, body=body, image_url=image_url)
             db.session.add(post)
