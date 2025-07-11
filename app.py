@@ -101,14 +101,19 @@ def create_app():
                     filename = secure_filename(file.filename)
                     s3 = boto3.client('s3', region_name='us-east-1')
                     try: 
-                        s3.upload_fileobj(
-                            Fileobj=file,
+                        presigned_post = s3.generate_presigned_post(
                             Bucket=S3_BUCKET,
                             Key=filename,
-                            ExtraArgs={
-                                "ContentType": file.content_type,
+                            Fields={
+                                "Content-Type": file.content_type,
                                 "ACL": "public-read"
-                            }
+
+                            },
+                            Conditions=[
+                                {"Content-Type": file.content_type},
+                                {"ACL": "public-read"}
+                            ],
+                            ExpiresIn=3600
                         )
 
                         image_url = f"https://{S3_BUCKET}.s3.amazonaws.com/{filename}"
